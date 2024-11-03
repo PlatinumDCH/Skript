@@ -1,44 +1,35 @@
-import os
-import shutil
+from main import create_dir
+from moved_file import move_file
 from pathlib import Path
+from file_help import FileHelper
 from my_logger import setup_logger
 import logging
-
+from config import PathConfig
 logger = setup_logger(__name__, level=logging.DEBUG, log_file=None)
 
-def is_correct_path(input_path:str)->bool:
-    path = Path(input_path)
-    return path.is_dir() and path.exists()
 
-def convert_path_str(path:str)-> Path:
-    return Path(path)
+def main(input_dir:str):
+    input_path = FileHelper(input_dir)
 
-def move_file(file_path:Path,target_dir:Path)->None:
-    shutil.move(str(file_path), target_dir / file_path.name)
-
-def sort_files_by_extension(input_dir:str):
-
-    if not is_correct_path(input_dir):
+    if not input_path.is_valid_file():
         logger.error(f'Could not find directory: {input_dir}')
         return
 
-    directory = convert_path_str(input_dir)
+    directory = input_path.file_path
 
-    for file_path in directory.glob('*'):
-        if file_path.is_file():
-            file_extension = file_path.suffix[1:]
-            if not file_extension:
-                file_extension = 'no_extension'
-
-            target_dir = directory / file_extension
-            target_dir.mkdir(exist_ok=True)
-
-            move_file(file_path,target_dir)
-            logger.info(f"Move {file_path} -> {target_dir / file_path.name}")
+    files = [file for file in directory.iterdir() if file.is_file()]
+    for file in files:
+        file_extension = file.suffix[1:]
+        if not file_extension:
+            continue
+        target_dir = directory / file_extension
+        create_dir(target_dir)
+        move_file(file, target_dir)
+        logger.info(f"Move {file.name} -> {target_dir}")
 
 
 
 if __name__ == '__main__':
 
-    path = Path()
-    sort_files_by_extension(path)
+    path = Path(PathConfig.main_path.value)
+    main(path)
