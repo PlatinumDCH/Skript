@@ -1,35 +1,69 @@
+import logging
+from pathlib import Path
+from abc import ABC, abstractmethod
+
 from main import create_dir
 from moved_file import move_file
-from pathlib import Path
-from file_help import FileHelper
 from my_logger import setup_logger
-import logging
 from config import PathConfig
+from help_instruction.path_descriptor import DirectoryPathDescriptor
+from help_instruction.errors.specific import NotIsDirectory, NotIsDirectory
 logger = setup_logger(__name__, level=logging.DEBUG, log_file=None)
 
+class AbstractFileManager(ABC):
 
-def main(input_dir:str):
-    input_path = FileHelper(input_dir)
+    @abstractmethod
+    def sort_files_by_extension(self):
+        ...
 
-    if not input_path.is_valid_file():
-        logger.error(f'Could not find directory: {input_dir}')
-        return
+    @abstractmethod
+    def create_target_directory(self, target_dir: Path):
+        ...
 
-    directory = input_path.file_path
+    @abstractmethod
+    def move_file(self, file: Path, target_dir: Path):
+        ...
+class FileManager(AbstractFileManager):
+    """main class"""
+    directory = DirectoryPathDescriptor(PathConfig.main_path.value)
 
-    files = [file for file in directory.iterdir() if file.is_file()]
-    for file in files:
+    def __init__(self,directory):
+        """use descriptor checking"""
+        self.directory = directory
+
+    def sort_files_by_extension(self):
+        files = self.get_files()
+        for file in files:
+            self.process_file(file)
+
+    def get_files(self):
+        directory = self.directory
+        return [file for file in directory.iterdir() if file.is_file()]
+
+    def process_file(self, file: Path):
         file_extension = file.suffix[1:]
         if not file_extension:
-            continue
-        target_dir = directory / file_extension
+            return
+        target_dir = self.directory / file_extension
+        self.create_target_directory(target_dir)
+        self.move_file(file, target_dir)
+
+
+    def create_target_directory(self,target_dir: Path):
         create_dir(target_dir)
+        logger.info(f"Created directory: {target_dir}")
+
+
+    def move_file(self,file: Path, target_dir: Path):
         move_file(file, target_dir)
         logger.info(f"Move {file.name} -> {target_dir}")
 
-
+def main(input_dir: str):
+    file_manager = FileManager(input_dir)
+    file_manager.sort_files_by_extension()
 
 if __name__ == '__main__':
 
     path = Path(PathConfig.main_path.value)
     main(path)
+
