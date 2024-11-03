@@ -1,6 +1,6 @@
 from pathlib import Path
 import functools
-from errors.specific import  NotExists, NotIsDirectory
+from py.sorting_directory.errors.specific import  NotExists, NotIsDirectory
 
 
 def check_directory(func):
