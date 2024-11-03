@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 import logging
-from my_logger import setup_logger
+from py.sorting_directory.my_logger import setup_logger
 
 logger = setup_logger(__name__, level=logging.DEBUG, log_file=None)
 def clear_old_file(directory, days=50):
